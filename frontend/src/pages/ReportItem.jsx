@@ -1,7 +1,7 @@
+import { useUser } from '@clerk/clerk-react';
+import { Upload, X } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { Upload, X } from 'lucide-react';
 
 const CATEGORIES = [
   'Electronics',
@@ -17,7 +17,7 @@ const CATEGORIES = [
 ];
 
 const ReportItem = () => {
-  const { user } = useAuth();
+  const { user } = useUser();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -34,33 +34,27 @@ const ReportItem = () => {
   const [error, setError] = useState('');
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-    setError('');
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
-
-    // Validate image
-    if (!file.type.startsWith('image/')) {
-      setError('Please select an image file');
-      return;
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setError('File size should be less than 5MB');
+        return;
+      }
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image size must be less than 5MB');
-      return;
-    }
-
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result);
-    };
-    reader.readAsDataURL(file);
   };
 
   const removeImage = () => {
@@ -74,7 +68,9 @@ const ReportItem = () => {
     setError('');
 
     try {
-      const token = localStorage.getItem('userToken');
+      // Get token from Clerk
+      const token = await window.Clerk?.session?.getToken();
+      
       const data = new FormData();
       
       data.append('type', formData.type);
@@ -83,8 +79,9 @@ const ReportItem = () => {
       data.append('category', formData.category);
       data.append('location', formData.location);
       data.append('date', formData.date);
-      data.append('contactEmail', user.email);
-      data.append('contactPhone', user.phone || '');
+      data.append('contactEmail', user.primaryEmailAddress.emailAddress);
+      data.append('contactPhone', user.primaryPhoneNumber?.phoneNumber || '');
+      // ... remainder ...
       
       if (imageFile) {
         data.append('image', imageFile);

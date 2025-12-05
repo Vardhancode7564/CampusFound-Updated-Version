@@ -1,93 +1,70 @@
 import { Link } from 'react-router-dom'
-import { MapPin, Calendar, User } from 'lucide-react'
+import { MapPin, Calendar, Tag } from 'lucide-react'
 import { format } from 'date-fns'
+import { motion } from 'framer-motion'
 
 const ItemCard = ({ item }) => {
-  const getTypeColor = (type) => {
-    return type === 'lost' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-  }
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'active':
-        return 'bg-blue-100 text-blue-800'
-      case 'claimed':
-        return 'bg-yellow-100 text-yellow-800'
-      case 'resolved':
-        return 'bg-gray-100 text-gray-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
-    }
+  const statusColors = {
+    lost: 'bg-red-100 text-red-700 border-red-200',
+    found: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    recovered: 'bg-slate-100 text-slate-700 border-slate-200'
   }
 
   return (
-    <Link to={`/items/${item._id}`} className="card hover:shadow-lg transition-shadow duration-300 group">
-      {/* Image */}
-      <div className="relative mb-4 rounded-lg overflow-hidden bg-gray-100 h-48">
-        {item.imageURL ? (
-          <img
-            src={item.imageURL}
-            alt={item.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400">
-            <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -5 }}
+      transition={{ duration: 0.3 }}
+      className="h-full"
+    >
+      <Link to={`/items/${item._id}`} className="block group h-full">
+        <div className="card h-full flex flex-col overflow-hidden hover:shadow-lg hover:shadow-primary-500/10 transition-shadow duration-300">
+          {/* Image Container */}
+          <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
+            <motion.img 
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.5 }}
+              src={item.imageURL || item.image || 'https://via.placeholder.com/400x300?text=No+Image'} 
+              alt={item.title}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute top-3 right-3 z-10">
+              <span className={`badge uppercase tracking-wider text-[10px] px-2.5 py-1 ${statusColors[item.status] || 'bg-slate-100 text-slate-700'}`}>
+                {item.type}
+              </span>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
           </div>
-        )}
-        
-        {/* Type Badge */}
-        <div className="absolute top-2 left-2">
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getTypeColor(item.type)}`}>
-            {item.type.toUpperCase()}
-          </span>
-        </div>
-        
-        {/* Status Badge */}
-        <div className="absolute top-2 right-2">
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(item.status)}`}>
-            {item.status.toUpperCase()}
-          </span>
-        </div>
-      </div>
 
-      {/* Content */}
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-1">
-          {item.title}
-        </h3>
-        
-        <p className="text-sm text-gray-600 line-clamp-2">
-          {item.description}
-        </p>
+          {/* Content */}
+          <div className="p-5 flex flex-col flex-grow">
+            <div className="flex items-start justify-between mb-2">
+              <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full border border-primary-100/50">
+                {item.category}
+              </span>
+              <span className="text-xs text-slate-400 flex items-center">
+                <Calendar size={12} className="mr-1" />
+                {format(new Date(item.date), 'MMM d, yyyy')}
+              </span>
+            </div>
 
-        <div className="flex items-center space-x-2 text-sm text-gray-500">
-          <span className="px-2 py-1 bg-gray-100 rounded text-xs font-medium">
-            {item.category}
-          </span>
-        </div>
+            <h3 className="text-lg font-bold text-slate-900 mb-2 line-clamp-1 group-hover:text-primary-600 transition-colors">
+              {item.title}
+            </h3>
+            
+            <p className="text-slate-500 text-sm mb-4 line-clamp-2 flex-grow">
+              {item.description}
+            </p>
 
-        <div className="flex items-center space-x-4 text-xs text-gray-500 pt-2 border-t">
-          <div className="flex items-center space-x-1">
-            <MapPin size={14} />
-            <span>{item.location}</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <Calendar size={14} />
-            <span>{format(new Date(item.date), 'MMM dd, yyyy')}</span>
+            <div className="flex items-center text-xs text-slate-500 border-t border-slate-100 pt-3 mt-auto">
+              <MapPin size={14} className="mr-1.5 text-slate-400" />
+              <span className="truncate">{item.location}</span>
+            </div>
           </div>
         </div>
-
-        {item.postedBy && (
-          <div className="flex items-center space-x-1 text-xs text-gray-500">
-            <User size={14} />
-            <span>by {item.postedBy.name}</span>
-          </div>
-        )}
-      </div>
-    </Link>
+      </Link>
+    </motion.div>
   )
 }
 

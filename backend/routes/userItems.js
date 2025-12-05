@@ -1,29 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
+
 const Item = require('../models/Item');
 
-// Auth middleware
-const protect = async (req, res, next) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ message: 'Not authorized' });
-    }
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.userId = decoded.id;
-    next();
-  } catch (error) {
-    return res.status(401).json({ message: 'Not authorized' });
-  }
-};
+const { protect } = require('../middleware/auth');
 
 // @route   GET /api/user/items
 // @desc    Get current user's items
 // @access  Private
 router.get('/items', protect, async (req, res) => {
   try {
-    const items = await Item.find({ postedBy: req.userId }).sort({ createdAt: -1 });
+    console.log('Fetching items for User:', req.user._id, 'ClerkID:', req.user.clerkId);
+    const items = await Item.find({ postedBy: req.user.clerkId }).sort({ createdAt: -1 });
+    console.log('Found items count:', items.length);
     res.json({ success: true, items, count: items.length });
   } catch (error) {
     console.error(error);

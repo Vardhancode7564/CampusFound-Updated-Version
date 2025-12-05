@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ClipboardList, Calendar, MapPin, AlertCircle } from 'lucide-react';
+import { useAuth } from '@clerk/clerk-react';
+import { format } from 'date-fns';
 
 const MyClaims = () => {
   const [claims, setClaims] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
+  const { getToken } = useAuth();
 
   useEffect(() => {
     fetchMyClaims();
@@ -13,7 +16,7 @@ const MyClaims = () => {
 
   const fetchMyClaims = async () => {
     try {
-      const token = localStorage.getItem('userToken');
+      const token = await getToken();
       const response = await fetch('http://localhost:5000/api/claims/my', {
         headers: {
           'Authorization': `Bearer ${token}`,

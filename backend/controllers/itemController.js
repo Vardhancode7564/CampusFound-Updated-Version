@@ -29,7 +29,7 @@ export const getItems = async (req, res) => {
 
     // Execute query
     const items = await Item.find(query)
-      .populate('postedBy', 'name email')
+      .populate('postedBy', 'name email clerkId')
       .sort(sortBy)
       .skip(skip)
       .limit(parseInt(limit));
@@ -57,7 +57,7 @@ export const getItems = async (req, res) => {
 // @access  Public
 export const getItem = async (req, res) => {
   try {
-    const item = await Item.findById(req.params.id).populate('postedBy', 'name email phone studentId');
+    const item = await Item.findById(req.params.id).populate('postedBy', 'name email phone studentId clerkId');
 
     if (!item) {
       return res.status(404).json({
@@ -101,7 +101,7 @@ export const createItem = async (req, res) => {
       }
     });
 
-    const populatedItem = await Item.findById(item._id).populate('postedBy', 'name email');
+    const populatedItem = await Item.findById(item._id).populate('postedBy', 'name email clerkId');
 
     res.status(201).json({
       success: true,
@@ -150,7 +150,7 @@ export const updateItem = async (req, res) => {
     item = await Item.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true
-    }).populate('postedBy', 'name email');
+    }).populate('postedBy', 'name email clerkId');
 
     res.status(200).json({
       success: true,

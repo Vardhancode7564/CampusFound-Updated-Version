@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { useUser, useAuth as useClerkAuth } from '@clerk/clerk-react';
+import api from '../utils/api';
 
 const AuthContext = createContext();
 
@@ -11,144 +13,56 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [admin, setAdmin] = useState(null);
+  const { user: clerkUser, isLoaded: isClerkLoaded } = useUser();
+  const { signOut, getToken } = useClerkAuth();
+  
+  const [mongoUser, setMongoUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Check if user or admin is logged in on mount
   useEffect(() => {
-    const checkAuth = async () => {
-      // Check user token
-      const userToken = localStorage.getItem('userToken');
-      if (userToken) {
-        try {
-          const response = await fetch('http://localhost:5000/api/auth/me', {
-            headers: { 'Authorization': `Bearer ${userToken}` },
-          });
-          if (response.ok) {
-            const data = await response.json();
-            setUser(data.user);
-          } else {
-            localStorage.removeItem('userToken');
-          }
-        } catch (error) {
-          localStorage.removeItem('userToken');
+    const syncUser = async () => {
+      if (!isClerkLoaded) return;
+
+      if (clerkUser) {
+        // Domain Restriction Check
+        const email = clerkUser.primaryEmailAddress?.emailAddress;
+        if (email && !email.endsWith('@rguktsklm.ac.in')) {
+          await signOut();
+          alert('Access Denied: Only @rguktsklm.ac.in emails are allowed.');
+          return;
         }
-      }
-      
-      // Check admin token
-      const adminToken = localStorage.getItem('adminToken');
-      if (adminToken) {
         try {
-          const response = await fetch('http://localhost:5000/api/admin/me', {
-            headers: { 'Authorization': `Bearer ${adminToken}` },
+          // Explicitly get token to ensure reliability during initial sync
+          const token = await getToken();
+          const response = await api.get('/auth/me', {
+            headers: { Authorization: `Bearer ${token}` }
           });
-          if (response.ok) {
-            const data = await response.json();
-            setAdmin(data.admin);
-          } else {
-            localStorage.removeItem('adminToken');
-          }
+          setMongoUser(response.data.user);
         } catch (error) {
-          localStorage.removeItem('adminToken');
+          console.error("Failed to sync user with backend:", error);
+          // If sync fails, we might want to sign them out or show error
+          // For now, just leave mongoUser null
         }
+      } else {
+        setMongoUser(null);
       }
       setLoading(false);
     };
-    checkAuth();
-  }, []);
 
-  // Register admin
-  const register = async (userData) => {
-    try {
-      const response = await fetch('http://localhost:5000/api/admin/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        localStorage.setItem('adminToken', data.token);
-        setAdmin(data.admin);
-        return { success: true };
-      } else {
-        return { success: false, message: data.message };
-      }
-    } catch (error) {
-      return { success: false, message: 'Registration failed' };
-    }
-  };
-
-  // Login admin
-  const login = async (credentials) => {
-    try {
-      const response = await fetch('http://localhost:5000/api/admin/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        localStorage.setItem('adminToken', data.token);
-        setAdmin(data.admin);
-        return { success: true };
-      } else {
-        return { success: false, message: data.message };
-      }
-    } catch (error) {
-      return { success: false, message: 'Login failed' };
-    }
-  };
-
-  // Logout admin
-  const logout = () => {
-    localStorage.removeItem('adminToken');
-    setAdmin(null);
-  };
-
-  // User login
-  const userLogin = async (credentials) => {
-    try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        localStorage.setItem('userToken', data.token);
-        setUser(data.user);
-        return { success: true };
-      } else {
-        return { success: false, message: data.message };
-      }
-    } catch (error) {
-      return { success: false, message: 'Login failed' };
-    }
-  };
-
-  // User logout
-  const userLogout = () => {
-    localStorage.removeItem('userToken');
-    setUser(null);
-  };
+    syncUser();
+  }, [isClerkLoaded, clerkUser, getToken]);
 
   const value = {
-    user,
-    admin,
-    loading,
-    register,
-    login,
-    logout,
-    userLogin,
-    userLogout,
-    isUserAuthenticated: !!user,
-    isAdminAuthenticated: !!admin,
+    user: mongoUser,         // Database user object (Has role, _id, etc.)
+    clerkUser,               // Clerk user object (Has imageUrl, emailAddresses, etc.)
+    loading: loading || !isClerkLoaded,
+    isAdmin: mongoUser?.role === 'admin',
+    logout: () => signOut(),
+    // Legacy support (optional, can be removed if not used)
+    isUserAuthenticated: !!mongoUser,
+    isAdminAuthenticated: mongoUser?.role === 'admin',
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+

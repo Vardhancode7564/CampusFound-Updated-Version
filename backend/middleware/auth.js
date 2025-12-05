@@ -1,45 +1,73 @@
-const jwt = require('jsonwebtoken');
-const Admin = require('../models/Admin');
+const { ClerkExpressRequireAuth, clerkClient } = require('@clerk/clerk-sdk-node');
+const User = require('../models/User');
 
-// Middleware to protect admin routes
+// Middleware to verify Clerk Token and Sync User to MongoDB
 const protect = async (req, res, next) => {
   try {
-    let token;
+    const clerkAuth = ClerkExpressRequireAuth();
 
-    // Check for token in Authorization header
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-      token = req.headers.authorization.split(' ')[1];
-    }
+    // Execute Clerk middleware first
+    clerkAuth(req, res, async (err) => {
+       if (err) {
+         return res.status(401).json({ success: false, message: 'Unauthenticated', error: err.message });
+       }
+       
+       // 2. Sync User to MongoDB
+       try {
+         const { userId } = req.auth; // Clerk User ID
+         
+         if (!userId) {
+            return res.status(401).json({ success: false, message: 'No User ID found in token' });
+         }
 
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Not authorized to access this route'
-      });
-    }
+         // Check if user exists in DB by Clerk ID
+         let user = await User.findOne({ clerkId: userId });
 
-    try {
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+         if (!user) {
+           // Fallback: Check if user exists by Email (for legacy/first-time sync)
+           const clerkUser = await clerkClient.users.getUser(userId);
+           const email = clerkUser.emailAddresses[0]?.emailAddress;
 
-      // Get admin from database
-      req.admin = await Admin.findById(decoded.id).select('-password');
+           // Domain Restriction
+           if (!email.endsWith('@rguktsklm.ac.in')) {
+             return res.status(403).json({ success: false, message: 'Access Denied: Domain not allowed' });
+           }
 
-      if (!req.admin) {
-        return res.status(401).json({
-          success: false,
-          message: 'Admin not found'
-        });
-      }
+           user = await User.findOne({ email });
 
-      next();
-    } catch (error) {
-      return res.status(401).json({
-        success: false,
-        message: 'Token is invalid or expired'
-      });
-    }
+           if (user) {
+             // User exists but hasn't synced Clerk ID yet - Update them
+             user.clerkId = userId;
+             await user.save();
+           } else {
+             // User doesn't exist - Create new one
+             const name = `${clerkUser.firstName || ''} ${clerkUser.lastName || ''}`.trim() || 'User';
+             
+             user = await User.create({
+               clerkId: userId,
+               name,
+               email,
+               studentId: `TEMP_${Date.now()}_${Math.floor(Math.random() * 1000)}`, // Unique Placeholder
+               phone: clerkUser.phoneNumbers && clerkUser.phoneNumbers.length > 0 ? clerkUser.phoneNumbers[0].phoneNumber : '',
+               role: 'student'
+             });
+           }
+         }
+         
+         // Attach user to request
+         req.user = user;
+         req.admin = user.role === 'admin' ? user : null;
+         
+         next();
+         
+       } catch (syncError) {
+         console.error("User Sync Error:", syncError);
+         return res.status(500).json({ success: false, message: 'User Sync Failed' });
+       }
+    });
+
   } catch (error) {
+    console.error("Auth Middleware Error:", error);
     return res.status(500).json({
       success: false,
       message: 'Server error in authentication'

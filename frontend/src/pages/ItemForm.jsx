@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useAuth, useUser } from '@clerk/clerk-react';
 
 const ItemForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { getToken } = useAuth();
   const isEdit = !!id;
 
   const [formData, setFormData] = useState({
@@ -45,7 +47,7 @@ const ItemForm = () => {
       const response = await fetch(`http://localhost:5000/api/items/${id}`);
       const data = await response.json();
       if (data.success) {
-        const item = data.item;
+        const item = data.data; // itemController returns { data: item }
         setFormData({
           type: item.type,
           title: item.title,
@@ -77,18 +79,18 @@ const ItemForm = () => {
     setLoading(true);
     setError('');
 
-    const token = localStorage.getItem('adminToken');
-    const data = new FormData();
-    
-    Object.keys(formData).forEach(key => {
-      data.append(key, formData[key]);
-    });
-    
-    if (image) {
-      data.append('image', image);
-    }
-
     try {
+      const token = await getToken();
+      const data = new FormData();
+      
+      Object.keys(formData).forEach(key => {
+        data.append(key, formData[key]);
+      });
+      
+      if (image) {
+        data.append('image', image);
+      }
+
       const url = isEdit
         ? `http://localhost:5000/api/items/${id}`
         : 'http://localhost:5000/api/items';

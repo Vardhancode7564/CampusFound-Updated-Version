@@ -1,265 +1,271 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { MapPin, Calendar, Phone, Mail, Tag, MessageSquare, Clock } from 'lucide-react';
+
+import { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { MapPin, Calendar, Tag, Share2, Flag, ArrowLeft, MessageCircle } from 'lucide-react'
+import { format } from 'date-fns'
+import { toast } from 'react-hot-toast'
+import api from '../utils/api'
+import { useUser } from '@clerk/clerk-react'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 const ItemDetails = () => {
   const { id } = useParams()
-  const { user } = useAuth()
   const navigate = useNavigate()
+  const { user } = useUser()
   const [item, setItem] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [showClaimModal, setShowClaimModal] = useState(false)
-  const [claimMessage, setClaimMessage] = useState('')
-  const [submittingClaim, setSubmittingClaim] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    fetchItem();
-  }, [id]);
+    fetchItem()
+  }, [id])
 
   const fetchItem = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/items/${id}`);
-      const data = await response.json();
-      if (response.ok) {
-        setItem(data.item);
-      } else {
-        navigate('/dashboard');
-      }
+      const { data } = await api.get(`/items/${id}`)
+      setItem(data.item)
     } catch (error) {
-      console.error('Failed to fetch item:', error);
-      navigate('/dashboard');
+      toast.error('Failed to load item details')
+      navigate('/dashboard')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  const handleClaim = async (e) => {
-    e.preventDefault();
-    
+  const handleClaim = async () => {
     if (!user) {
-      alert('Please login to claim items');
-      navigate('/login');
-      return;
+      toast.error('Please login to claim items')
+      navigate('/login')
+      return
     }
 
-    setSubmittingClaim(true);
-    const token = localStorage.getItem('userToken');
-
+    setSubmitting(true)
     try {
-      const response = await fetch('http://localhost:5000/api/claims', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          itemId: item._id,
-          message: claimMessage,
-          verificationDetails: claimMessage
-        }),
-      });
-      
-      if (response.ok) {
-        alert('Claim submitted successfully!');
-        setShowClaimModal(false);
-        setClaimMessage('');
-      } else {
-        alert('Failed to submit claim');
-      }
+       // In a real app we'd open a modal for message input, for now prompt is fine
+       const defaultMsg = item.type === 'lost' 
+         ? `I found your lost item (${item.title}). Please contact me to arrange a meetup.` 
+         : `I believe this found item (${item.title}) belongs to me. Please contact me to verify.`;
+
+       const message = prompt("Enter a message to the poster:", defaultMsg);
+       
+       if (message === null) { // User cancelled
+         setSubmitting(false)
+         return
+       }
+
+       if (!message.trim()) {
+          toast.error("Message cannot be empty")
+          setSubmitting(false)
+          return
+       }
+
+       const response = await api.post('/claims/send-email', {
+         itemId: item._id,
+         message
+       });
+
+       if (response.data.success) {
+         toast.success('Email sent to the poster successfully!')
+       }
     } catch (error) {
-      console.error('Error:', error);
-      alert('Failed to submit claim');
+      console.error(error);
+      toast.error(error.response?.data?.message || 'Failed to send email')
     } finally {
-      setSubmittingClaim(false);
+      setSubmitting(false)
     }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
-      </div>
-    );
   }
 
-  if (!item) {
-    return null;
-  }
+  if (loading) return <div className="h-screen flex items-center justify-center"><LoadingSpinner /></div>
+  if (!item) return null
 
-  const canClaim = user && item.status === 'active'
+  // Check ownership
+  const isOwner = user && (
+    (typeof item.postedBy === 'string' && item.postedBy === user.id) ||
+    (item.postedBy?.clerkId === user.id)
+  )
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content */}
-        <div className="lg:col-span-2">
-          {/* Image */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div className="relative rounded-lg overflow-hidden bg-gray-100 h-96">
-              {item.imageURL ? (
-                <img
-                  src={item.imageURL}
-                  alt={item.title}
-                  className="w-full h-full object-contain"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                  <svg className="w-32 h-32" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
+    <div className="min-h-screen bg-slate-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Back Button */}
+        <button 
+          onClick={() => navigate(-1)}
+          className="flex items-center text-slate-500 hover:text-slate-900 mb-6 transition-colors"
+        >
+          <ArrowLeft size={20} className="mr-2" />
+          Back to Browse
+        </button>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Left Column: Image & Details */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Image Card */}
+            <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100">
+               <div className="aspect-video bg-slate-100 relative">
+                  <img 
+                    src={item.imageURL || item.image || 'https://via.placeholder.com/800x600?text=No+Image'} 
+                    alt={item.title}
+                    className="w-full h-full object-contain"
+                  />
+                  <div className="absolute top-4 left-4">
+                     <span className={`badge px-3 py-1 text-sm font-bold uppercase tracking-wide
+                        ${item.type === 'lost' ? 'bg-red-500 text-white border-red-600' : 'bg-emerald-500 text-white border-emerald-600'}
+                     `}>
+                        {item.type}
+                     </span>
+                  </div>
+               </div>
+            </div>
+
+            {/* Description Card */}
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
+              <div className="flex justify-between items-start mb-6">
+                <h1 className="text-3xl font-bold text-slate-900">{item.title}</h1>
+                <div className="flex gap-2">
+                   <button 
+                     onClick={() => {
+                       navigator.clipboard.writeText(window.location.href);
+                       toast.success('Link copied to clipboard!');
+                     }}
+                     className="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-full transition-colors" 
+                     title="Share"
+                   >
+                      <Share2 size={20} />
+                   </button>
+                   <button className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors" title="Report Content">
+                      <Flag size={20} />
+                   </button>
                 </div>
-              )}
-              
-              {/* Badges */}
-              <div className="absolute top-4 left-4 flex space-x-2">
-                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                  item.type === 'lost' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                }`}>
-                  {item.type.toUpperCase()}
-                </span>
-                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                  item.status === 'active' ? 'bg-blue-100 text-blue-800' : 
-                  item.status === 'claimed' ? 'bg-yellow-100 text-yellow-800' : 
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {item.status.toUpperCase()}
-                </span>
               </div>
 
+              <div className="prose prose-slate max-w-none">
+                 <h3 className="text-lg font-semibold text-slate-900 mb-2">Description</h3>
+                 <p className="text-slate-600 leading-relaxed whitespace-pre-line">
+                    {item.description}
+                 </p>
+              </div>
+
+               <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
+                     <div className="bg-white p-2 rounded-lg mr-4 border border-slate-100 shadow-sm">
+                        <MapPin className="text-primary-600" size={24} />
+                     </div>
+                     <div>
+                        <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Location</p>
+                        <p className="text-slate-900 font-semibold">{item.location}</p>
+                     </div>
+                  </div>
+                  
+                  <div className="flex items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
+                     <div className="bg-white p-2 rounded-lg mr-4 border border-slate-100 shadow-sm">
+                        <Calendar className="text-primary-600" size={24} />
+                     </div>
+                     <div>
+                        <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Date</p>
+                        <p className="text-slate-900 font-semibold">{format(new Date(item.date), 'MMMM d, yyyy')}</p>
+                     </div>
+                  </div>
+
+                   <div className="flex items-center p-4 bg-slate-50 rounded-xl border border-slate-100">
+                     <div className="bg-white p-2 rounded-lg mr-4 border border-slate-100 shadow-sm">
+                        <Tag className="text-primary-600" size={24} />
+                     </div>
+                     <div>
+                        <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Category</p>
+                        <p className="text-slate-900 font-semibold">{item.category}</p>
+                     </div>
+                  </div>
+               </div>
             </div>
           </div>
 
-          {/* Details */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">{item.title}</h1>
-            
-            <div className="flex flex-wrap gap-2 mb-6">
-              <span className="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-700 flex items-center space-x-1">
-                <Tag size={14} />
-                <span>{item.category}</span>
-              </span>
-              <span className="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-700 flex items-center space-x-1">
-                <MapPin size={14} />
-                <span>{item.location}</span>
-              </span>
-              <span className="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-700 flex items-center space-x-1">
-                <Calendar size={14} />
-                <span>{new Date(item.date).toLocaleDateString()}</span>
-              </span>
-              <span className="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium text-gray-700 flex items-center space-x-1">
-                <Clock size={14} />
-                <span>Posted {new Date(item.createdAt || item.date).toLocaleDateString()}</span>
-              </span>
-            </div>
+          {/* Right Column: Actions */}
+          <div className="lg:col-span-1">
+             <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 sticky top-24">
+                <h3 className="text-lg font-bold text-slate-900 mb-6">Action Center</h3>
+                
+                {item.status === 'active' ? (
+                   <>
+                     {isOwner ? (
+                       <div className="space-y-4">
+                          <div className="p-4 bg-primary-50 text-primary-900 rounded-xl">
+                             <p className="font-medium">This is your post</p>
+                             <p className="text-sm mt-1 text-primary-700">Manage it from your profile or 'My Posts' page.</p>
+                          </div>
+                          <button 
+                             onClick={() => navigate('/my-posts')}
+                             className="w-full btn-secondary mb-3"
+                          >
+                             Manage Post
+                          </button>
+                          
+                          <button 
+                             onClick={async () => {
+                               if(!window.confirm("Are you sure you want to mark this item as claimed/received? This will close the post.")) return;
+                               try {
+                                 await api.put(`/items/${item._id}`, { status: 'claimed' });
+                                 setItem(prev => ({ ...prev, status: 'claimed' }));
+                                 toast.success("Item marked as received!");
+                               } catch(err) {
+                                 toast.error("Failed to update status");
+                               }
+                             }}
+                             className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-xl transition-colors shadow-sm"
+                          >
+                             Mark as Received
+                          </button>
+                       </div>
+                     ) : (
+                       <div className="space-y-4">
+                          <p className="text-slate-600 text-sm">
+                             {item.type === 'lost' 
+                               ? "Have you found this item? Reach out to the owner securely." 
+                               : "Is this item yours? Submit a claim to verify ownership."}
+                          </p>
+                          
+                          <button 
+                             onClick={handleClaim}
+                             disabled={submitting}
+                             className="w-full btn-primary h-12 text-lg shadow-lg shadow-primary-500/20"
+                          >
+                             {submitting ? 'Processing...' : (
+                                <span className="flex items-center justify-center">
+                                   <MessageCircle className="mr-2" size={20} />
+                                   {item.type === 'lost' ? 'I Found This' : 'Claim Item'}
+                                </span>
+                             )}
+                          </button>
+                          
+                          <p className="text-xs text-center text-slate-400 mt-4">
+                             Safety Tip: Always verify items in a safe, public location.
+                          </p>
+                       </div>
+                     )}
+                   </>
+                ) : (
+                   <div className="p-6 bg-slate-100 rounded-xl text-center">
+                      <p className="text-slate-900 font-bold mb-2">Item {item.status}</p>
+                      <p className="text-slate-500 text-sm">This item is no longer active.</p>
+                   </div>
+                )}
 
-            <div className="prose max-w-none">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Description</h3>
-              <p className="text-gray-700 whitespace-pre-line">{item.description}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="lg:col-span-1">
-          {/* Contact Information */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
-            
-            <div className="space-y-3">
-              {item.contactInfo?.email && (
-                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="bg-indigo-100 p-2 rounded-full">
-                    <Mail size={18} className="text-indigo-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500">Email</p>
-                    <a
-                      href={`mailto:${item.contactInfo.email}`}
-                      className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
-                    >
-                      {item.contactInfo.email}
-                    </a>
-                  </div>
+                <div className="mt-8 pt-6 border-t border-slate-100">
+                   <div className="flex items-center justify-between mb-4">
+                      <span className="text-sm text-slate-500">Posted by</span>
+                      <span className="font-medium text-slate-900">{item.postedBy?.name || 'Campus Member'}</span>
+                   </div>
+                   <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-500">Member since</span>
+                      <span className="font-medium text-slate-900">{new Date().getFullYear()}</span>
+                   </div>
                 </div>
-              )}
-              
-              {item.contactInfo?.phone && (
-                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="bg-green-100 p-2 rounded-full">
-                    <Phone size={18} className="text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500">Phone</p>
-                    <a
-                      href={`tel:${item.contactInfo.phone}`}
-                      className="text-sm font-medium text-green-600 hover:text-green-700"
-                    >
-                      {item.contactInfo.phone}
-                    </a>
-                  </div>
-                </div>
-              )}
-              
-              {!item.contactInfo?.email && !item.contactInfo?.phone && (
-                <p className="text-sm text-gray-500 text-center py-4">No contact information available</p>
-              )}
-            </div>
+             </div>
           </div>
-
-          {/* Claim Button */}
-          {canClaim && (
-            <button
-              onClick={() => setShowClaimModal(true)}
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-md flex items-center justify-center space-x-2"
-            >
-              <MessageSquare size={18} />
-              <span>Claim This Item</span>
-            </button>
-          )}
         </div>
       </div>
-
-      {/* Claim Modal */}
-      {showClaimModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Claim This Item</h3>
-            <form onSubmit={handleClaim}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Message to Owner
-                </label>
-                <textarea
-                  value={claimMessage}
-                  onChange={(e) => setClaimMessage(e.target.value)}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  rows="4"
-                  placeholder="Describe why this item belongs to you and provide any identifying details..."
-                  required
-                />
-              </div>
-              <div className="flex space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setShowClaimModal(false)}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md"
-                  disabled={submittingClaim}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md"
-                  disabled={submittingClaim}
-                >
-                  {submittingClaim ? 'Submitting...' : 'Submit Claim'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

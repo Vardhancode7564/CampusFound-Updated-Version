@@ -1,11 +1,16 @@
+
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Package, Trash2 } from 'lucide-react';
+import { useAuth } from '@clerk/clerk-react';
+import { toast } from 'react-hot-toast';
+import api from '../utils/api';
 
 const MyPosts = () => {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
+  const { getToken } = useAuth();
 
   useEffect(() => {
     fetchMyItems();
@@ -13,18 +18,13 @@ const MyPosts = () => {
 
   const fetchMyItems = async () => {
     try {
-      const token = localStorage.getItem('userToken');
-      const response = await fetch('http://localhost:5000/api/user/items', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setItems(data.items || []);
+      const response = await api.get('/user/items');
+      if (response.data.success) {
+        setItems(response.data.items || []);
       }
     } catch (error) {
       console.error('Failed to fetch posts:', error);
+      toast.error('Failed to load your posts');
     } finally {
       setLoading(false);
     }
@@ -42,21 +42,13 @@ const MyPosts = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this item?')) return;
     
-    const token = localStorage.getItem('userToken');
     try {
-      const response = await fetch(`http://localhost:5000/api/items/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (response.ok) {
-        setItems(items.filter(item => item._id !== id));
-        alert('Item deleted successfully');
-      }
+      await api.delete(`/items/${id}`);
+      setItems(items.filter(item => item._id !== id));
+      toast.success('Item deleted successfully');
     } catch (error) {
       console.error('Error deleting item:', error);
-      alert('Failed to delete item');
+      toast.error('Failed to delete item');
     }
   };
 
@@ -76,7 +68,7 @@ const MyPosts = () => {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">My Posts</h1>
           <p className="text-gray-600">Manage your reported items</p>
         </div>
-        <Link to="/report" className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md flex items-center space-x-2">
+        <Link to="/report" className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md flex items-center space-x-2">
           <Plus size={18} />
           <span>Report New Item</span>
         </Link>
@@ -89,7 +81,7 @@ const MyPosts = () => {
             onClick={() => setFilter('all')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               filter === 'all' 
-                ? 'bg-indigo-600 text-white' 
+                ? 'bg-primary-600 text-white' 
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
@@ -170,7 +162,7 @@ const MyPosts = () => {
                 <div className="flex space-x-2">
                   <Link
                     to={`/items/${item._id}`}
-                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-3 py-2 rounded text-center"
+                    className="flex-1 bg-primary-600 hover:bg-primary-700 text-white text-sm px-3 py-2 rounded text-center"
                   >
                     View Details
                   </Link>
@@ -192,7 +184,7 @@ const MyPosts = () => {
           </div>
           <h3 className="text-xl font-semibold text-gray-900 mb-2">No items posted yet</h3>
           <p className="text-gray-600 mb-6">Start by reporting a lost or found item</p>
-          <Link to="/report" className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md inline-flex items-center space-x-2">
+          <Link to="/report" className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-md inline-flex items-center space-x-2">
             <Plus size={18} />
             <span>Report Item</span>
           </Link>

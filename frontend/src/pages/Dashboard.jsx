@@ -1,228 +1,186 @@
-import { useState, useEffect } from 'react';
-import ItemCard from '../components/ItemCard';
-import LoadingSpinner from '../components/LoadingSpinner';
-import { Search, Filter, X } from 'lucide-react';
-
-const CATEGORIES = [
-  'Electronics',
-  'ID Card',
-  'Books',
-  'Clothing',
-  'Accessories',
-  'Keys',
-  'Wallet',
-  'Bags',
-  'Stationery',
-  'Others'
-];
+import { useState, useEffect } from 'react'
+import { Search, SlidersHorizontal } from 'lucide-react'
+import ItemCard from '../components/ItemCard'
+import LoadingSpinner from '../components/LoadingSpinner'
+import api from '../utils/api'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const Dashboard = () => {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({
-    type: '',
-    category: '',
-    status: 'active',
-    search: ''
-  })
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    totalPages: 1,
-    total: 0
+    search: '',
+    type: 'all',
+    category: 'all',
+    status: 'active'
   })
   const [showFilters, setShowFilters] = useState(false)
 
   useEffect(() => {
     fetchItems()
-  }, [filters, pagination.currentPage])
+  }, [])
 
   const fetchItems = async () => {
     try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      
-      if (filters.type) params.append('type', filters.type);
-      if (filters.category) params.append('category', filters.category);
-      if (filters.status) params.append('status', filters.status);
-      if (filters.search) params.append('search', filters.search);
-
-      const response = await fetch(`http://localhost:5000/api/items?${params}`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setItems(data.items || []);
-        setPagination({
-          currentPage: 1,
-          totalPages: 1,
-          total: data.count || 0
-        });
-      }
+      const { data } = await api.get('/items')
+      setItems(data.items)
     } catch (error) {
-      console.error('Failed to fetch items:', error);
+      console.error('Error fetching items:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   }
 
-  const handleFilterChange = (key, value) => {
-    setFilters({ ...filters, [key]: value })
-    setPagination({ ...pagination, currentPage: 1 })
-  }
+  const filteredItems = items.filter(item => {
+    const matchesSearch = (item.title?.toLowerCase() || '').includes(filters.search.toLowerCase()) ||
+                         (item.description?.toLowerCase() || '').includes(filters.search.toLowerCase())
+    
+    // Case insensitive comparison for type
+    const matchesType = filters.type === 'all' || 
+                       (item.type?.toLowerCase() === filters.type.toLowerCase())
+    
+    // Case insensitive comparison for category
+    const matchesCategory = filters.category === 'all' || 
+                           (item.category?.toLowerCase() === filters.category.toLowerCase())
+    
+    // Only show active items
+    const matchesStatus = item.status === 'active' 
+    
+    return matchesSearch && matchesType && matchesCategory && matchesStatus
+  })
 
-  const clearFilters = () => {
-    setFilters({
-      type: '',
-      category: '',
-      status: 'active',
-      search: ''
-    })
-  }
-
-  const handleSearch = (e) => {
-    e.preventDefault()
-    fetchItems()
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Browse Items</h1>
-        <p className="text-gray-600">Find lost items or help someone recover theirs</p>
-      </div>
-
-      {/* Search and Filter Bar */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-        <form onSubmit={handleSearch} className="flex gap-4 mb-4">
-          <div className="flex-1 relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="text-gray-400" size={20} />
-            </div>
-            <input
-              type="text"
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              className="input-field pl-10"
-              placeholder="Search by title, description, or location..."
-            />
-          </div>
-          <button type="submit" className="btn-primary">
-            Search
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowFilters(!showFilters)}
-            className="btn-outline flex items-center space-x-2"
-          >
-            <Filter size={18} />
-            <span>Filters</span>
-          </button>
-        </form>
-
-        {/* Filter Options */}
-        {showFilters && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-              <select
-                value={filters.type}
-                onChange={(e) => handleFilterChange('type', e.target.value)}
-                className="input-field"
-              >
-                <option value="">All Types</option>
-                <option value="lost">Lost</option>
-                <option value="found">Found</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-              <select
-                value={filters.category}
-                onChange={(e) => handleFilterChange('category', e.target.value)}
-                className="input-field"
-              >
-                <option value="">All Categories</option>
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <select
-                value={filters.status}
-                onChange={(e) => handleFilterChange('status', e.target.value)}
-                className="input-field"
-              >
-                <option value="">All Status</option>
-                <option value="active">Active</option>
-                <option value="claimed">Claimed</option>
-                <option value="resolved">Resolved</option>
-              </select>
-            </div>
-
-            <div className="md:col-span-3">
-              <button
-                onClick={clearFilters}
-                className="text-sm text-primary-600 hover:text-primary-700 flex items-center space-x-1"
-              >
-                <X size={16} />
-                <span>Clear all filters</span>
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Results */}
-      {loading ? (
-        <LoadingSpinner />
-      ) : items.length > 0 ? (
-        <>
-          <div className="mb-4 text-sm text-gray-600">
-            Showing {items.length} of {pagination.total} items
+    <div className="min-h-screen bg-slate-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Header Section */}
+        <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4"
+        >
+          <div>
+             <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Browse Items</h1>
+             <p className="text-slate-500 mt-1">Found something? Lost something? Check here.</p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {items.map((item) => (
+          <div className="flex items-center gap-2">
+            <motion.button 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowFilters(!showFilters)}
+                className={`btn-secondary flex items-center gap-2 ${showFilters ? 'bg-slate-200 ring-2 ring-slate-300' : ''}`}
+            >
+                <SlidersHorizontal size={18} />
+                <span>Filters</span>
+            </motion.button>
+          </div>
+        </motion.div>
+
+        {/* Search & Filter Bar */}
+        <AnimatePresence>
+            <motion.div 
+               layout
+               className={`bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-8`}
+               initial={false}
+               animate={{ 
+                   height: 'auto',
+                   opacity: 1,
+                   marginBottom: 32 // mb-8
+               }}
+               transition={{ duration: 0.3 }}
+            >
+               <div className={`p-4 transition-all duration-300 ${showFilters ? 'block' : 'hidden md:block'}`}>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="col-span-2 relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20}/>
+                          <input
+                            type="text"
+                            placeholder="Search by keyword..."
+                            className="input-field pl-10"
+                            value={filters.search}
+                            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                          />
+                      </div>
+                      <div>
+                          <select 
+                            className="input-field"
+                            value={filters.type}
+                            onChange={(e) => setFilters({ ...filters, type: e.target.value })}
+                          >
+                              <option value="all">All Types</option>
+                              <option value="lost">Lost</option>
+                              <option value="found">Found</option>
+                          </select>
+                      </div>
+                       <div>
+                          <select 
+                            className="input-field"
+                            value={filters.category}
+                            onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+                          >
+                              <option value="all">All Categories</option>
+                              <option value="Electronics">Electronics</option>
+                              <option value="Books">Books</option>
+                              <option value="Clothing">Clothing</option>
+                              <option value="Documents">Documents</option>
+                              <option value="Others">Others</option>
+                          </select>
+                      </div>
+                   </div>
+               </div>
+            </motion.div>
+        </AnimatePresence>
+
+        {/* Grid Content */}
+        {loading ? (
+           <div className="flex justify-center items-center h-64">
+             <LoadingSpinner />
+           </div>
+        ) : filteredItems.length > 0 ? (
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          >
+            {filteredItems.map(item => (
               <ItemCard key={item._id} item={item} />
             ))}
-          </div>
-
-          {/* Pagination */}
-          {pagination.totalPages > 1 && (
-            <div className="flex justify-center space-x-2">
-              <button
-                onClick={() => setPagination({ ...pagination, currentPage: pagination.currentPage - 1 })}
-                disabled={pagination.currentPage === 1}
-                className="btn-secondary disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <span className="px-4 py-2 text-gray-700">
-                Page {pagination.currentPage} of {pagination.totalPages}
-              </span>
-              <button
-                onClick={() => setPagination({ ...pagination, currentPage: pagination.currentPage + 1 })}
-                disabled={pagination.currentPage === pagination.totalPages}
-                className="btn-secondary disabled:opacity-50"
-              >
-                Next
-              </button>
+          </motion.div>
+        ) : (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-20 bg-white rounded-xl border border-dashed border-slate-300"
+          >
+            <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Search className="text-slate-400" size={32} />
             </div>
-          )}
-        </>
-      ) : (
-        <div className="text-center py-12">
-          <div className="text-gray-400 mb-4">
-            <Search size={64} className="mx-auto" />
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No items found</h3>
-          <p className="text-gray-600">Try adjusting your filters or search query</p>
-        </div>
-      )}
+            <h3 className="text-lg font-medium text-slate-900">No items found</h3>
+            <p className="text-slate-500 mt-1 max-w-sm mx-auto">
+                Try adjusting your search or filters to find what you're looking for.
+            </p>
+            <button 
+                onClick={() => setFilters({ search: '', type: 'all', category: 'all', status: 'active' })}
+                className="btn-outline mt-4"
+            >
+                Clear Filters
+            </button>
+          </motion.div>
+        )}
+      </div>
     </div>
   )
 }

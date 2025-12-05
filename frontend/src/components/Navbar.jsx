@@ -1,196 +1,164 @@
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { Menu, X, User, LogOut, FileText, ClipboardList, Plus } from 'lucide-react'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react'
+import { Menu, X, PlusCircle } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const Navbar = () => {
-  const { user, admin, userLogout, logout } = useAuth()
-  const navigate = useNavigate()
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-
-  const handleUserLogout = () => {
-    userLogout()
-    navigate('/')
-    setMobileMenuOpen(false)
-  }
-
-  const handleAdminLogout = () => {
-    logout()
-    navigate('/')
-    setMobileMenuOpen(false)
-  }
-
-  const closeMobileMenu = () => {
-    setMobileMenuOpen(false)
-  }
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   return (
-    <nav className="bg-white shadow-md sticky top-0 z-50">
+    <motion.nav 
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+      className="bg-white/80 backdrop-blur-xl border-b border-slate-200/60 sticky top-0 z-50 supports-[backdrop-filter]:bg-white/60"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="bg-indigo-600 p-2 rounded-lg">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            <span className="text-xl font-bold text-gray-900">CampusFound</span>
-          </Link>
+          <div className="flex items-center">
+            <Link to="/" className="flex-shrink-0 flex items-center space-x-2 group">
+              <motion.div 
+                whileHover={{ rotate: 10 }}
+                className="h-8 w-8 bg-primary-600 rounded-lg flex items-center justify-center group-hover:bg-primary-500 transition-colors"
+              >
+                 <span className="text-white font-bold text-lg">C</span>
+              </motion.div>
+              <span className="text-xl font-bold text-slate-900 tracking-tight group-hover:text-primary-600 transition-colors">
+                CampusFound
+              </span>
+            </Link>
+          </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-4">
-            <Link to="/dashboard" className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
-              Browse Items
+          <div className="hidden md:flex md:items-center md:space-x-6">
+            <Link to="/" className="text-sm font-medium text-slate-600 hover:text-primary-600 transition-colors">
+              Home
             </Link>
-            
-            {user ? (
-              /* User Menu */
-              <>
-                <Link to="/report" className="flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-                  <Plus size={18} />
-                  <span>Report Item</span>
+            <SignedIn>
+                <Link to="/dashboard" className="text-sm font-medium text-slate-600 hover:text-primary-600 transition-colors">
+                Browse Items
                 </Link>
-                <Link to="/my-posts" className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
+                <Link to="/my-posts" className="text-sm font-medium text-slate-600 hover:text-primary-600 transition-colors">
                   My Posts
                 </Link>
-                <Link to="/my-claims" className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
-                  My Claims
+                <Link to="/report">
+                    <motion.button 
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="btn-primary flex items-center gap-2 shadow-primary-500/20 shadow-md transform scale-90"
+                    >
+                        <PlusCircle size={16} />
+                        <span>Post</span>
+                    </motion.button>
                 </Link>
-                <Link to="/profile" className="flex items-center space-x-2 text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium border border-gray-300 hover:border-indigo-600">
-                  <div className="bg-indigo-600 p-1.5 rounded-full">
-                    <User size={16} className="text-white" />
-                  </div>
-                  <span className="font-medium">{user.name}</span>
+                <Link to="/profile" className="text-sm font-medium text-slate-600 hover:text-primary-600 transition-colors">
+                  Profile
                 </Link>
-                <button 
-                  onClick={handleUserLogout} 
-                  className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                >
-                  <LogOut size={18} />
-                  <span>Logout</span>
-                </button>
-              </>
-            ) : admin ? (
-              /* Admin Menu */
-              <>
-                <Link to="/admin/dashboard" className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
-                  Admin Dashboard
-                </Link>
-                <div className="flex items-center space-x-2 text-gray-700 px-3 py-2 rounded-md text-sm font-medium border border-gray-300">
-                  <div className="bg-indigo-600 p-1.5 rounded-full">
-                    <User size={16} className="text-white" />
-                  </div>
-                  <span className="font-medium">{admin.username}</span>
+                <div className="ml-2">
+                    <UserButton afterSignOutUrl="/" />
                 </div>
-                <button 
-                  onClick={handleAdminLogout} 
-                  className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                >
-                  <LogOut size={18} />
-                  <span>Logout</span>
-                </button>
-              </>
-            ) : (
-              /* Public Menu */
-              <>
-                <Link to="/contact" className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
-                  Contact
-                </Link>
-                <Link to="/login" className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">
-                  Login
-                </Link>
-                <Link to="/admin/login" className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
-                  Admin Login
-                </Link>
-              </>
-            )}
+            </SignedIn>
+            <SignedOut>
+                <div className="flex items-center space-x-3">
+                    <Link to="/login" className="text-sm font-medium text-slate-600 hover:text-primary-600">
+                    Log in
+                    </Link>
+                    <Link to="/register" className="btn-primary text-sm px-4 py-2">
+                    Sign up
+                    </Link>
+                </div>
+            </SignedOut>
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center gap-4">
+            <SignedIn>
+                <UserButton afterSignOutUrl="/" />
+            </SignedIn>
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-gray-700 hover:text-indigo-600"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="text-slate-600 hover:text-primary-600 focus:outline-none p-2"
             >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Mobile menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-200">
-          <div className="px-2 pt-2 pb-3 space-y-1">
-            <Link
-              to="/dashboard"
-              onClick={closeMobileMenu}
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100"
+      {/* Mobile Menu */}
+      <AnimatePresence>
+      {isMenuOpen && (
+        <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="md:hidden bg-white border-t border-slate-100 overflow-hidden"
+        >
+          <div className="px-4 pt-2 pb-6 space-y-1">
+            <Link 
+              to="/" 
+              className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:bg-slate-50 hover:text-primary-600"
+              onClick={() => setIsMenuOpen(false)}
             >
-              Browse Items
+              Home
             </Link>
             
-            {user ? (
-              /* User Mobile Menu */
-              <>
-                <Link to="/report" onClick={closeMobileMenu} className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">
-                  <Plus size={18} />
-                  <span>Report Item</span>
+            <SignedIn>
+                <Link 
+                to="/dashboard" 
+                className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:bg-slate-50 hover:text-primary-600"
+                onClick={() => setIsMenuOpen(false)}
+                >
+                Browse Items
                 </Link>
-                <Link to="/my-posts" onClick={closeMobileMenu} className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">
-                  <FileText size={18} />
-                  <span>My Posts</span>
+                <Link 
+                to="/report" 
+                className="block px-3 py-2 rounded-md text-base font-medium text-primary-600 bg-primary-50"
+                onClick={() => setIsMenuOpen(false)}
+                >
+                Post an Item
                 </Link>
-                <Link to="/my-claims" onClick={closeMobileMenu} className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">
-                  <ClipboardList size={18} />
-                  <span>My Claims</span>
+                <Link 
+                to="/my-posts" 
+                className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:bg-slate-50 hover:text-primary-600"
+                onClick={() => setIsMenuOpen(false)}
+                >
+                My Posts
                 </Link>
-                <Link to="/profile" onClick={closeMobileMenu} className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">
-                  <User size={18} />
-                  <span>Profile</span>
+                <Link 
+                to="/profile" 
+                className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:bg-slate-50 hover:text-primary-600"
+                onClick={() => setIsMenuOpen(false)}
+                >
+                My Profile
                 </Link>
-                <div className="px-3 py-2 text-sm text-gray-600">
-                  Logged in as: <span className="font-medium">{user.name}</span>
+            </SignedIn>
+
+            <SignedOut>
+                <div className="mt-4 flex flex-col gap-2">
+                    <Link 
+                        to="/login"
+                        className="block w-full text-center px-4 py-2 border border-slate-200 rounded-lg text-slate-700 font-medium hover:bg-slate-50"
+                        onClick={() => setIsMenuOpen(false)}
+                    >
+                        Log in
+                    </Link>
+                    <Link 
+                        to="/register"
+                        className="block w-full text-center px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700"
+                        onClick={() => setIsMenuOpen(false)}
+                    >
+                        Sign up
+                    </Link>
                 </div>
-                <button onClick={handleUserLogout} className="flex items-center space-x-2 w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50">
-                  <LogOut size={18} />
-                  <span>Logout</span>
-                </button>
-              </>
-            ) : admin ? (
-              /* Admin Mobile Menu */
-              <>
-                <Link to="/admin/dashboard" onClick={closeMobileMenu} className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">
-                  <User size={18} />
-                  <span>Admin Dashboard</span>
-                </Link>
-                <div className="px-3 py-2 text-sm text-gray-600">
-                  Logged in as: <span className="font-medium">{admin.username}</span>
-                </div>
-                <button onClick={handleAdminLogout} className="flex items-center space-x-2 w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-red-50">
-                  <LogOut size={18} />
-                  <span>Logout</span>
-                </button>
-              </>
-            ) : (
-              /* Public Mobile Menu */
-              <>
-                <Link to="/contact" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">
-                  Contact
-                </Link>
-                <Link to="/login" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100">
-                  Login
-                </Link>
-                <Link to="/admin/login" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium bg-indigo-600 text-white hover:bg-indigo-700 text-center">
-                  Admin Login
-                </Link>
-              </>
-            )}
+            </SignedOut>
           </div>
-        </div>
+        </motion.div>
       )}
-    </nav>
+      </AnimatePresence>
+    </motion.nav>
   )
 }
 

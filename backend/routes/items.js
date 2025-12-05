@@ -40,7 +40,7 @@ router.get('/', async (req, res) => {
 // @access  Public
 router.get('/:id', async (req, res) => {
   try {
-    const item = await Item.findById(req.params.id);
+    const item = await Item.findById(req.params.id).populate('postedBy', 'name email clerkId');
     if (!item) {
       return res.status(404).json({ message: 'Item not found' });
     }
@@ -51,26 +51,10 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Simple auth middleware for users
-const protectUser = async (req, res, next) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return res.status(401).json({ message: 'Not authorized' });
-    }
-    const jwt = require('jsonwebtoken');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.userId = decoded.id;
-    next();
-  } catch (error) {
-    return res.status(401).json({ message: 'Not authorized' });
-  }
-};
-
 // @route   POST /api/items
 // @desc    Create new item (users and admin)
 // @access  Private
-router.post('/', protectUser, upload.single('image'), async (req, res) => {
+router.post('/', protect, upload.single('image'), async (req, res) => {
   try {
     const { type, title, description, category, location, date, contactEmail, contactPhone } = req.body;
 
@@ -92,6 +76,8 @@ router.post('/', protectUser, upload.single('image'), async (req, res) => {
       imagePublicId = result.public_id;
     }
 
+    console.log('Creating item for user:', req.user.clerkId);
+    
     const item = await Item.create({
       type,
       title,
@@ -101,7 +87,7 @@ router.post('/', protectUser, upload.single('image'), async (req, res) => {
       date: date || Date.now(),
       imageURL,
       imagePublicId,
-      postedBy: req.userId || (req.admin && req.admin.username) || 'Unknown',
+      postedBy: req.user.clerkId,
       contactInfo: {
         email: contactEmail,
         phone: contactPhone,
@@ -175,6 +161,13 @@ router.delete('/:id', protect, async (req, res) => {
     const item = await Item.findById(req.params.id);
     if (!item) {
       return res.status(404).json({ message: 'Item not found' });
+    }
+
+    // Check ownership
+    // Allow if user is owner OR if user is admin
+    // Checking against clerkId string
+    if (item.postedBy !== req.user.clerkId && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to delete this item' });
     }
 
     // Delete image from Cloudinary if exists
