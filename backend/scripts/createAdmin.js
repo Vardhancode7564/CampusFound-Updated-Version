@@ -11,14 +11,17 @@ const createAdmin = async () => {
     // Admin details
     const adminData = {
       username: 'admin',
-      email: 'admin@rguktsklm.ac.in',
+      email: 's210611@rguktsklm.ac.in',
       password: 'Admin@123', // Change this to a secure password
     };
 
     // Check if admin already exists
     const existingAdmin = await Admin.findOne({ email: adminData.email });
     if (existingAdmin) {
-      console.log('⚠️  Admin already exists with email:', adminData.email);
+      console.log('⚠️  Admin already exists. Updating password...');
+      existingAdmin.password = 'Prasad@7564';
+      await existingAdmin.save();
+      console.log('✅ Password updated successfully!');
       process.exit(0);
     }
 

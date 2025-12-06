@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
+import CustomCursor from './components/CustomCursor';
+import ChatBot from './components/ChatBot';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -12,6 +14,7 @@ import Profile from './pages/Profile';
 import MyPosts from './pages/MyPosts';
 import MyClaims from './pages/MyClaims';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminLogin from './pages/AdminLogin';
 import ItemForm from './pages/ItemForm';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import { Toaster } from 'react-hot-toast';
@@ -40,6 +43,8 @@ function App() {
         <Router>
           <div className="flex flex-col min-h-screen bg-slate-50">
             <Toaster position="top-right" />
+            <CustomCursor />
+            <ChatBot />
             <Navbar />
             <main className="flex-grow">
               <Routes>
@@ -97,6 +102,7 @@ function App() {
                 } />
                 
                 {/* Admin Routes */}
+                <Route path="/admin/login" element={<AdminLogin />} />
                 <Route path="/admin/dashboard" element={
                   <AdminProtectedRoute>
                     <AdminDashboard />

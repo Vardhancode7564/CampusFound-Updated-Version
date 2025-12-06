@@ -27,6 +27,7 @@ const Footer = () => {
               <li><Link to="/report" className="text-sm hover:text-primary-400 transition-colors">Report Lost</Link></li>
               <li><Link to="/report" className="text-sm hover:text-primary-400 transition-colors">Report Found</Link></li>
               <li><Link to="/contact" className="text-sm hover:text-primary-400 transition-colors">Help Center</Link></li>
+              <li><Link to="/admin/login" className="text-sm hover:text-primary-400 transition-colors">Admin Login</Link></li>
             </ul>
           </div>
           

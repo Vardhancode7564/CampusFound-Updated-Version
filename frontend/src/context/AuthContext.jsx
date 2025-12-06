@@ -21,6 +21,25 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const syncUser = async () => {
+      // 1. Check for Admin Token (Bypass Clerk)
+      const adminToken = localStorage.getItem('adminToken');
+      if (adminToken) {
+          try {
+              const response = await api.get('/admin/me', {
+                  headers: { Authorization: `Bearer ${adminToken}` }
+              });
+              if (response.data.success) {
+                  setMongoUser({ ...response.data.admin, role: 'admin' });
+                  setLoading(false);
+                  return; 
+              }
+          } catch (err) {
+              console.error("Admin token invalid:", err);
+              localStorage.removeItem('adminToken');
+          }
+      }
+
+      // 2. Clerk Sync (Existing Logic)
       if (!isClerkLoaded) return;
 
       if (clerkUser) {
@@ -44,7 +63,8 @@ export const AuthProvider = ({ children }) => {
           // For now, just leave mongoUser null
         }
       } else {
-        setMongoUser(null);
+        // Only clear if we didn't find an admin user above (though we returned early if we did)
+        if (!adminToken) setMongoUser(null);
       }
       setLoading(false);
     };
@@ -52,12 +72,33 @@ export const AuthProvider = ({ children }) => {
     syncUser();
   }, [isClerkLoaded, clerkUser, getToken]);
 
+  const loginAdmin = async (credentials) => {
+    try {
+        const response = await api.post('/admin/login', credentials);
+        if (response.data.success) {
+            localStorage.setItem('adminToken', response.data.token);
+            setMongoUser({ ...response.data.admin, role: 'admin' });
+            return { success: true };
+        }
+    } catch (error) {
+        return { 
+            success: false, 
+            message: error.response?.data?.message || 'Login failed' 
+        };
+    }
+  };
+
   const value = {
     user: mongoUser,         // Database user object (Has role, _id, etc.)
     clerkUser,               // Clerk user object (Has imageUrl, emailAddresses, etc.)
-    loading: loading || !isClerkLoaded,
+    loading: loading,        // Adjusted logic
     isAdmin: mongoUser?.role === 'admin',
-    logout: () => signOut(),
+    logout: () => {
+        localStorage.removeItem('adminToken');
+        signOut();
+        setMongoUser(null);
+    },
+    loginAdmin, // Added function
     // Legacy support (optional, can be removed if not used)
     isUserAuthenticated: !!mongoUser,
     isAdminAuthenticated: mongoUser?.role === 'admin',

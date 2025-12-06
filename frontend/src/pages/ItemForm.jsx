@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAuth, useUser } from '@clerk/clerk-react';
+import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
 
 const ItemForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getToken } = useAuth();
+  // const { getToken } = useAuth(); // Not needed with api util interception
   const isEdit = !!id;
 
   const [formData, setFormData] = useState({
@@ -44,8 +45,8 @@ const ItemForm = () => {
 
   const fetchItem = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/items/${id}`);
-      const data = await response.json();
+      const response = await api.get(`/items/${id}`);
+      const data = response.data;
       if (data.success) {
         const item = data.data; // itemController returns { data: item }
         setFormData({
@@ -80,7 +81,6 @@ const ItemForm = () => {
     setError('');
 
     try {
-      const token = await getToken();
       const data = new FormData();
       
       Object.keys(formData).forEach(key => {
@@ -91,28 +91,26 @@ const ItemForm = () => {
         data.append('image', image);
       }
 
-      const url = isEdit
-        ? `http://localhost:5000/api/items/${id}`
-        : 'http://localhost:5000/api/items';
-      
-      const response = await fetch(url, {
-        method: isEdit ? 'PUT' : 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-        body: data,
-      });
+      let response;
+      if (isEdit) {
+          response = await api.put(`/items/${id}`, data, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+          });
+      } else {
+          response = await api.post('/items', data, {
+              headers: { 'Content-Type': 'multipart/form-data' }
+          });
+      }
 
-      const result = await response.json();
-      if (response.ok) {
+      if (response.data.success) {
         alert(`Item ${isEdit ? 'updated' : 'created'} successfully!`);
         navigate('/admin/dashboard');
       } else {
-        setError(result.message || 'Failed to save item');
+        setError(response.data.message || 'Failed to save item');
       }
     } catch (error) {
       console.error('Error:', error);
-      setError('Failed to save item');
+      setError(error.response?.data?.message || 'Failed to save item');
     } finally {
       setLoading(false);
     }

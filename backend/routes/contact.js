@@ -9,7 +9,7 @@ let transporter = null;
 try {
   const nodemailer = require('nodemailer');
   if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-    transporter = nodemailer.createTransporter({
+    transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
@@ -18,7 +18,7 @@ try {
     });
   }
 } catch (error) {
-  console.log('⚠️  Nodemailer not configured. Email notifications disabled.');
+  console.error('⚠️  Nodemailer configuration error:', error);
 }
 
 // Multer configuration for memory storage

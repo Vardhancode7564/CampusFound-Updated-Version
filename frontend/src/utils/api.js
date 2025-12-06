@@ -10,7 +10,14 @@ const api = axios.create({
 // Add a request interceptor
 api.interceptors.request.use(
   async (config) => {
-    // Check if Clerk is loaded and user is signed in
+    // 1. Check for Admin Token
+    const adminToken = localStorage.getItem('adminToken');
+    if (adminToken) {
+        config.headers.Authorization = `Bearer ${adminToken}`;
+        return config;
+    }
+
+    // 2. Check for Clerk Token
     if (window.Clerk && window.Clerk.session) {
       try {
         const token = await window.Clerk.session.getToken();

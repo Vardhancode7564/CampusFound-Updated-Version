@@ -68,6 +68,9 @@ const Navbar = () => {
                     <Link to="/register" className="btn-primary text-sm px-4 py-2">
                     Sign up
                     </Link>
+                    <Link to="/admin/login" className="text-sm font-medium text-slate-400 hover:text-slate-600 transition-colors border-l border-slate-200 pl-3">
+                        Admin
+                    </Link>
                 </div>
             </SignedOut>
           </div>
@@ -151,6 +154,13 @@ const Navbar = () => {
                         onClick={() => setIsMenuOpen(false)}
                     >
                         Sign up
+                    </Link>
+                    <Link 
+                        to="/admin/login"
+                        className="block w-full text-center px-4 py-2 text-slate-500 font-medium hover:text-primary-600"
+                        onClick={() => setIsMenuOpen(false)}
+                    >
+                        Admin Login
                     </Link>
                 </div>
             </SignedOut>

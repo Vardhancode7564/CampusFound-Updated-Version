@@ -1,132 +1,112 @@
-# CampusFound - Lost & Found Portal
+# CampusFound - Lost & Found Platform
 
-**CampusFound** is a full-stack web application designed to help university students and staff report, track, and reclaim lost items on campus. Built with the **MERN Stack** (MongoDB, Express, React, Node.js), it features secure authentication, image handling, and automated email notifications for item claims.
+CampusFound is a modern web application designed to help university campuses manage lost and found items efficiently. It bridges the gap between students who lose items and those who find them, ensuring a streamlined process for reporting, searching, and claiming lost belongings.
 
-
+![CampusFound Banner](https://via.placeholder.com/1000x300?text=CampusFound+Lost+%26+Found)
 
 ## 🚀 Features
 
-- **Authentication & Security**
-  - Secure login/signup via **Clerk Authentication**.
-  - Domain restriction (e.g., restricted to `@rguktsklm.ac.in` emails).
-  - Phone number synchronization for better contactability.
+### For Students
+*   **Browse Items**: View a feed of lost and found items with filters (category, date, location).
+*   **Search**: Real-time search by keywords.
+*   **Report**: Post details about items you've found or lost, including images.
+*   **Claim**: Initiate claims for items you believe are yours.
+*   **User Dashboard**: Manage your posted items and claim status.
+*   **Secure Auth**: Easy sign-in via Clerk (Google/GitHub supported).
 
-- **Item Management**
-  - **Report Lost/Found Items:** Easy form to post items with details (Date, Location, Category).
-  - **Image Upload:** Integration with **Cloudinary** for image storage.
-  - **Browse & Filter:** Search items by category, type (Lost vs. Found), or status.
-  - **My Posts:** Manage your reported items (View, Delete, Mark as Received).
+### For Admin
+*   **Dashboard**: Overview of all reported items and claims.
+*   **Moderation**: Approve or delete posts.
+*   **Claim Management**: Verify ownership and mark items as returned.
 
-- **Claims & Communication**
-  - **Secure Claims:** Non-owners can click "I Found This" or "Claim Item".
-  - **Automated Emails:** Backend uses **Nodemailer** to send structured emails to the poster with the claimer's contact info.
-  - **Visual Status:** Items can be marked as "Claimed/Received" by the owner to close the loop.
+## 🛠️ Tech Stack
 
-- **User Profile**
-  - View personal statistics (Total reports, Active, Solved).
-  - Manage contact information.
+### Frontend
+*   **React (Vite)**: Fast, component-based UI.
+*   **Tailwind CSS**: Modern utility-first styling.
+*   **Framer Motion**: Smooth animations.
+*   **Clerk**: Authentication and user management.
+*   **Axios**: API integration.
 
-## 🛠️ Technology Stack
+### Backend
+*   **Node.js & Express**: Robust REST API.
+*   **MongoDB & Mongoose**: Flexible document database.
+*   **Redis**: High-performance caching for item feeds.
+*   **Cloudinary**: Image hosting and optimization.
+*   **Nodemailer**: Email notifications for contact forms.
 
-**Frontend:**
-- **React.js (Vite)** - Fast frontend framework.
-- **Tailwind CSS** - Modern styling and responsive design.
-- **Clerk React** - Authentication management.
-- **Lucide React** - Beautiful iconography.
-- **Framer Motion** - Smooth UI animations.
-- **Axios** - API requests.
-
-**Backend:**
-- **Node.js & Express** - RESTful API server.
-- **MongoDB & Mongoose** - NoSQL database for flexible data storage.
-- **Cloudinary** - Cloud image management.
-- **Nodemailer** - Email delivery service.
-
-## 📂 Project Structure
-
-```
-CampusFound/
-├── frontend/          # React Client Application
-│   ├── src/
-│   │   ├── components/# Reusable UI components (Navbar, ItemCard, etc.)
-│   │   ├── pages/     # Page views (Home, Dashboard, ItemDetails, etc.)
-│   │   └── utils/     # Helper functions (api.js, etc.)
-│   └── ...
-├── backend/           # Node.js API Server
-│   ├── models/        # Mongoose Database Models (User, Item)
-│   ├── routes/        # API Endpoints (auth, items, claims)
-│   ├── utils/         # Services (emailService, cloud storage)
-│   └── server.js      # Entry point
-└── README.md
-```
-
-## ⚙️ Setup & Installation
+## 🏗️ Setup & Installation
 
 ### Prerequisites
-- Node.js (v16+)
-- MongoDB (Local or Atlas URL)
-- Cloudinary Account
-- Clerk Account
-- Gmail Account (for Nodemailer with App Password)
+*   Node.js (v18+)
+*   MongoDB (Atlas or local)
+*   Redis (Cloud or local)
+*   Cloudinary Account
+*   Clerk Account
 
-### 1. Clone the Repository
+### 1. Clone the repository
 ```bash
-git clone <repository-url>
-cd CampusFound
+git clone https://github.com/yourusername/campusfound.git
+cd campusfound
 ```
 
 ### 2. Backend Setup
-Navigate to the backend folder and install dependencies:
 ```bash
 cd backend
 npm install
 ```
 
-Create a `.env` file in the `backend` directory with the following keys:
+Create a `.env` file in the `backend` folder:
 ```env
 PORT=5000
 MONGODB_URI=your_mongodb_connection_string
-CLERK_SECRET_KEY=your_clerk_secret_key
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
-EMAIL_SERVICE=gmail
+CLERK_PUBLISHABLE_KEY=your_clerk_key
+CLERK_SECRET_KEY=your_clerk_secret
+REDIS_URL=redis://default:password@host:port
 EMAIL_USER=your_email@gmail.com
-EMAIL_PASS=your_gmail_app_password
+EMAIL_PASS=your_app_password
 CLIENT_URL=http://localhost:5173
 ```
 
-Start the server:
+Run the server:
 ```bash
-npm start
-# OR for development
 npm run dev
 ```
 
 ### 3. Frontend Setup
-Navigate to the frontend folder and install dependencies:
 ```bash
-cd ../frontend
+cd frontend
 npm install
 ```
 
-Create a `.env` file in the `frontend` directory:
+Create a `.env` file in the `frontend` folder:
 ```env
-VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-VITE_API_BASE_URL=http://localhost:5000/api
+VITE_CLERK_PUBLISHABLE_KEY=your_clerk_key
+VITE_API_URL=http://localhost:5000/api
 ```
 
-Start the client:
+Run the frontend:
 ```bash
 npm run dev
 ```
 
-## 🌐 Usage
-1.  Open your browser at `http://localhost:5173`.
-2.  Sign up using your university email.
-3.  Browse existing lost/found items on the Dashboard.
-4.  Use the **"Report Item"** button to post something you've lost or found.
-5.  Check **"My Posts"** to manage your listings.
+## 🔗 API Endpoints
 
----
-Developed for **RGUKT Srikakulam** Campus Community.
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| **GET** | `/api/items` | Get all items (Cached with Redis) |
+| **GET** | `/api/items/:id` | Get single item details |
+| **POST** | `/api/items` | Report a new item |
+| **PUT** | `/api/items/:id` | Update an item |
+| **DELETE** | `/api/items/:id` | Delete an item |
+| **POST** | `/api/claims` | Submit a claim |
+| **POST** | `/api/contact` | Submit contact form |
+
+## 🤝 Contributing
+Contributions are welcome! Please fork the repository and submit a pull request.
+
+## 📄 License
+This project is licensed under the ISC License.

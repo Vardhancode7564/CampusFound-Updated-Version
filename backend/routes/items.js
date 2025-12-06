@@ -4,6 +4,8 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const Item = require('../models/Item');
 const { protect } = require('../middleware/auth');
+const { cacheItems, clearCache, CACHE_TTL } = require('../middleware/cache');
+const { getRedisClient } = require('../config/redis');
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
@@ -12,7 +14,8 @@ const upload = multer({ storage: storage });
 // @route   GET /api/items
 // @desc    Get all items
 // @access  Public
-router.get('/', async (req, res) => {
+// @access  Public
+router.get('/', cacheItems, async (req, res) => {
   try {
     const { type, category, status, search } = req.query;
     let query = {};
@@ -28,6 +31,18 @@ router.get('/', async (req, res) => {
     }
 
     const items = await Item.find(query).sort({ createdAt: -1 });
+
+    // Set cache if key exists (from middleware)
+    if (req.cacheKey) {
+      try {
+        const client = await getRedisClient();
+        // storage for 1 hour
+        await client.setEx(req.cacheKey, CACHE_TTL, JSON.stringify({ success: true, count: items.length, items }));
+      } catch (err) {
+        console.error('Redis set cache error:', err);
+      }
+    }
+
     res.json({ success: true, count: items.length, items });
   } catch (error) {
     console.error(error);
@@ -94,6 +109,9 @@ router.post('/', protect, upload.single('image'), async (req, res) => {
       },
     });
 
+    // Clear cache when new item is added
+    await clearCache('items:*');
+
     res.status(201).json({ success: true, item });
   } catch (error) {
     console.error(error);
@@ -146,6 +164,10 @@ router.put('/:id', protect, upload.single('image'), async (req, res) => {
     }
 
     await item.save();
+    
+    // Clear cache on update
+    await clearCache('items:*');
+    
     res.json({ success: true, item });
   } catch (error) {
     console.error(error);
@@ -176,6 +198,10 @@ router.delete('/:id', protect, async (req, res) => {
     }
 
     await Item.findByIdAndDelete(req.params.id);
+    
+    // Clear cache on delete
+    await clearCache('items:*');
+    
     res.json({ success: true, message: 'Item deleted successfully' });
   } catch (error) {
     console.error(error);

@@ -1,5 +1,8 @@
-const express = require('express');
 const dotenv = require('dotenv');
+// Load environment variables immediately
+dotenv.config();
+
+const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -13,9 +16,6 @@ const authRoutes = require('./routes/auth');
 const itemRoutes = require('./routes/items');
 const claimsRoutes = require('./routes/claims');
 const userRoutes = require('./routes/userItems');
-
-// Load environment variables
-dotenv.config();
 
 // Configure Cloudinary
 cloudinary.config({
@@ -62,6 +62,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/items', itemRoutes);
 app.use('/api/claims', claimsRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/chat', require('./routes/chat'));
 
 // Health check route
 app.get('/api/health', (req, res) => {

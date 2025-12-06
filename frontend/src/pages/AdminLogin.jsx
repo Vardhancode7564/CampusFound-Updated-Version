@@ -6,7 +6,7 @@ const AdminLogin = () => {
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { loginAdmin } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -19,7 +19,7 @@ const AdminLogin = () => {
     setLoading(true);
     setError('');
 
-    const result = await login(credentials);
+    const result = await loginAdmin(credentials);
     setLoading(false);
 
     if (result.success) {
