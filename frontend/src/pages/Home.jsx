@@ -169,8 +169,8 @@ const Home = () => {
                             "I lost my wallet last week and found it listed here within hours. The meetup was safe and easy at the student center!"
                         </p>
                         <div className="mt-4 flex items-center">
-                            <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white text-xs font-bold">JD</div>
-                            <span className="ml-3 text-sm text-slate-400">John Doe, Computer Science</span>
+                            <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white text-xs font-bold">HV</div>
+                            <span className="ml-3 text-sm text-slate-400">Harsha Vardhan, Computer Science</span>
                         </div>
                     </div>
                 </div>
