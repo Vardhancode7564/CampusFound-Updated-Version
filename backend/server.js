@@ -45,11 +45,22 @@ const limiter = rateLimit({
 app.use('/api', limiter);
 
 // CORS configuration
+// app.use(cors({
+//   origin: process.env.CLIENT_URL || 'http://localhost:5173',
+//   methods:['GET','POST','PUT','DELETE'],
+//   credentials: true
+// }));
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
-  methods:['GET','POST','PUT','DELETE'],
+  origin: [
+    process.env.CLIENT_URL,
+    'http://localhost:5173',
+    'https://campus-found-updated-version.vercel.app'
+  ],
+  methods: ['GET','POST','PUT','DELETE'],
   credentials: true
 }));
+
 
 // Body parser middleware
 app.use(express.json({ limit: '10mb' }));
