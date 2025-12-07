@@ -87,7 +87,7 @@ const ReportItem = () => {
         data.append('image', imageFile);
       }
 
-      const response = await fetch('http://localhost:5000/api/items', {
+      const response = await fetch('https://campusfound-updated-version.onrender.com/api/items', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

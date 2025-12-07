@@ -17,7 +17,7 @@ const MyClaims = () => {
   const fetchMyClaims = async () => {
     try {
       const token = await getToken();
-      const response = await fetch('http://localhost:5000/api/claims/my', {
+      const response = await fetch('https://campusfound-updated-version.onrender.com/api/claims/my', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

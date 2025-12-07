@@ -85,7 +85,7 @@ npm install
 Create a `.env` file in the `frontend` folder:
 ```env
 VITE_CLERK_PUBLISHABLE_KEY=your_clerk_key
-VITE_API_URL=http://localhost:5000/api
+VITE_API_URL=https://campusfound-updated-version.onrender.com/api
 ```
 
 Run the frontend:
