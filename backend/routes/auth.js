@@ -1,6 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/auth');
+const { 
+  register, 
+  login, 
+  getMe, 
+  updateProfile 
+} = require('../controllers/authController');
 
 // @route   GET /api/auth/me
 // @desc    Get current user (Syned from Clerk)

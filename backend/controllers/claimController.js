@@ -1,10 +1,10 @@
-import Claim from '../models/Claim.js';
-import Item from '../models/Item.js';
+const Claim = require('../models/Claim');
+const Item = require('../models/Item');
 
 // @desc    Create new claim
 // @route   POST /api/claims
 // @access  Private
-export const createClaim = async (req, res) => {
+const createClaim = async (req, res) => {
   try {
     const { itemId, message } = req.body;
 
@@ -74,7 +74,7 @@ export const createClaim = async (req, res) => {
 // @desc    Get all claims for an item (for item owner)
 // @route   GET /api/claims/item/:itemId
 // @access  Private
-export const getItemClaims = async (req, res) => {
+const getItemClaims = async (req, res) => {
   try {
     const item = await Item.findById(req.params.itemId);
 
@@ -113,7 +113,7 @@ export const getItemClaims = async (req, res) => {
 // @desc    Get user's claims
 // @route   GET /api/claims/my
 // @access  Private
-export const getMyClaims = async (req, res) => {
+const getMyClaims = async (req, res) => {
   try {
     const claims = await Claim.find({ claimantId: req.user.id })
       .populate('itemId', 'title type imageURL location')
@@ -135,7 +135,7 @@ export const getMyClaims = async (req, res) => {
 // @desc    Update claim status
 // @route   PUT /api/claims/:id
 // @access  Private
-export const updateClaimStatus = async (req, res) => {
+const updateClaimStatus = async (req, res) => {
   try {
     const { status, verificationDetails } = req.body;
 
@@ -191,7 +191,7 @@ export const updateClaimStatus = async (req, res) => {
 // @desc    Delete claim
 // @route   DELETE /api/claims/:id
 // @access  Private
-export const deleteClaim = async (req, res) => {
+const deleteClaim = async (req, res) => {
   try {
     const claim = await Claim.findById(req.params.id);
 
@@ -223,4 +223,12 @@ export const deleteClaim = async (req, res) => {
       message: error.message
     });
   }
+};
+
+module.exports = {
+  createClaim,
+  getItemClaims,
+  getMyClaims,
+  updateClaimStatus,
+  deleteClaim
 };

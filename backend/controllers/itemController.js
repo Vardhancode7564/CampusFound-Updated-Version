@@ -1,10 +1,10 @@
-import Item from '../models/Item.js';
-import { v2 as cloudinary } from 'cloudinary';
+const Item = require('../models/Item');
+const cloudinary = require('cloudinary').v2;
 
 // @desc    Get all items with filters
 // @route   GET /api/items
 // @access  Public
-export const getItems = async (req, res) => {
+const getItems = async (req, res) => {
   try {
     const { type, category, status, search, sortBy = '-createdAt', page = 1, limit = 12 } = req.query;
 
@@ -55,7 +55,7 @@ export const getItems = async (req, res) => {
 // @desc    Get single item
 // @route   GET /api/items/:id
 // @access  Public
-export const getItem = async (req, res) => {
+const getItem = async (req, res) => {
   try {
     const item = await Item.findById(req.params.id).populate('postedBy', 'name email phone studentId clerkId');
 
@@ -81,7 +81,7 @@ export const getItem = async (req, res) => {
 // @desc    Create new item
 // @route   POST /api/items
 // @access  Private
-export const createItem = async (req, res) => {
+const createItem = async (req, res) => {
   try {
     const { type, title, description, category, location, date, imageURL, imagePublicId } = req.body;
 
@@ -119,7 +119,7 @@ export const createItem = async (req, res) => {
 // @desc    Update item
 // @route   PUT /api/items/:id
 // @access  Private
-export const updateItem = async (req, res) => {
+const updateItem = async (req, res) => {
   try {
     let item = await Item.findById(req.params.id);
 
@@ -168,7 +168,7 @@ export const updateItem = async (req, res) => {
 // @desc    Delete item
 // @route   DELETE /api/items/:id
 // @access  Private
-export const deleteItem = async (req, res) => {
+const deleteItem = async (req, res) => {
   try {
     const item = await Item.findById(req.params.id);
 
@@ -214,7 +214,7 @@ export const deleteItem = async (req, res) => {
 // @desc    Get user's items
 // @route   GET /api/items/my/posts
 // @access  Private
-export const getMyItems = async (req, res) => {
+const getMyItems = async (req, res) => {
   try {
     const items = await Item.find({ postedBy: req.user.id }).sort('-createdAt');
 
@@ -229,4 +229,13 @@ export const getMyItems = async (req, res) => {
       message: error.message
     });
   }
+};
+
+module.exports = {
+  getItems,
+  getItem,
+  createItem,
+  updateItem,
+  deleteItem,
+  getMyItems
 };

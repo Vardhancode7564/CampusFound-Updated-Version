@@ -28,7 +28,7 @@ const Register = () => {
         />
 
         <div className="relative z-10 h-full flex flex-col items-center justify-center text-white p-12 text-center">
-            <h2 className="text-4xl font-bold mb-6">Join Community</h2>
+            <h2 className="text-4xl font-bold mb-6 text-white">Join Community</h2>
             <p className="text-lg text-slate-400 max-w-md">
                 Create an account to start reporting lost items and helping others found theirs.
             </p>
@@ -57,7 +57,7 @@ const Register = () => {
                }
              }}
              signInUrl="/login"
-             redirectUrl="/dashboard"
+             //redirectUrl="/dashboard"
            />
         </div>
       </motion.div>

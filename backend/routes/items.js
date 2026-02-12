@@ -3,6 +3,14 @@ const router = express.Router();
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const Item = require('../models/Item');
+const { 
+  getItems, 
+  getItem, 
+  createItem, 
+  updateItem, 
+  deleteItem, 
+  getMyItems 
+} = require('../controllers/itemController');
 const { protect } = require('../middleware/auth');
 const { cacheItems, clearCache, CACHE_TTL } = require('../middleware/cache');
 const { getRedisClient } = require('../config/redis');

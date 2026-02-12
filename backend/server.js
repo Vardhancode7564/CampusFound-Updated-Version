@@ -17,14 +17,14 @@ const itemRoutes = require('./routes/items');
 const claimsRoutes = require('./routes/claims');
 const userRoutes = require('./routes/userItems');
 
-// Configure Cloudinary
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Connect to database
+
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/campusfound')
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => console.error('❌ MongoDB connection error:', err));

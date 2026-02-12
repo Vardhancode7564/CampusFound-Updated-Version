@@ -1,9 +1,25 @@
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middleware/auth');
+const { 
+  createClaim, 
+  getItemClaims, 
+  getMyClaims, 
+  updateClaimStatus, 
+  deleteClaim 
+} = require('../controllers/claimController');
 const Item = require('../models/Item');
 const User = require('../models/User');
 const { sendEmail, getClaimEmailTemplate } = require('../utils/emailService');
+
+// Claim CRUD routes
+router.post('/', protect, createClaim);
+router.get('/my', protect, getMyClaims);
+router.get('/item/:itemId', protect, getItemClaims);
+
+router.route('/:id')
+  .put(protect, updateClaimStatus)
+  .delete(protect, deleteClaim);
 
 // @route   POST /api/claims/send-email
 // @desc    Send an email to the item poster

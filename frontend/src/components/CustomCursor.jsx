@@ -5,6 +5,7 @@ import { Search } from 'lucide-react';
 const CustomCursor = () => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
 
   useEffect(() => {
     const mouseMove = (e) => {
@@ -15,19 +16,25 @@ const CustomCursor = () => {
     };
 
     const mouseOver = (e) => {
-      // Check if hovering over clickable elements
       const target = e.target;
-      if (
+      
+      // Check for clickable elements
+      const isClickable = 
         target.tagName === 'A' || 
         target.tagName === 'BUTTON' || 
         target.closest('a') || 
         target.closest('button') ||
-        target.getAttribute('role') === 'button'
-      ) {
-        setIsHovering(true);
-      } else {
-        setIsHovering(false);
-      }
+        target.getAttribute('role') === 'button';
+
+      // Check for text inputs
+      const isInput = 
+        target.tagName === 'INPUT' || 
+        target.tagName === 'TEXTAREA' || 
+        target.tagName === 'SELECT' ||
+        target.isContentEditable;
+
+      setIsHovering(isClickable);
+      setIsHidden(isInput);
     };
 
     window.addEventListener('mousemove', mouseMove);
@@ -44,6 +51,7 @@ const CustomCursor = () => {
       x: mousePosition.x - 12,
       y: mousePosition.y - 12,
       scale: 1,
+      opacity: isHidden ? 0 : 1,
       transition: {
         type: "spring",
         mass: 0.1,
@@ -55,6 +63,7 @@ const CustomCursor = () => {
       x: mousePosition.x - 12,
       y: mousePosition.y - 12,
       scale: 1.5,
+      opacity: isHidden ? 0 : 1,
       transition: {
         type: "spring",
         mass: 0.1,
@@ -67,8 +76,11 @@ const CustomCursor = () => {
   return (
     <>
       <style>{`
-        body, a, button, input, select, textarea {
+        body, a, button {
           cursor: none !important;
+        }
+        input, textarea, select {
+          cursor: auto !important;
         }
       `}</style>
       <motion.div
