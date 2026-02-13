@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ClipboardList, Calendar, MapPin, AlertCircle } from 'lucide-react';
-import { useAuth } from '@clerk/clerk-react';
 import { format } from 'date-fns';
+import api from '../utils/api';
 
 const MyClaims = () => {
   const [claims, setClaims] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
-  const { getToken } = useAuth();
 
   useEffect(() => {
     fetchMyClaims();
@@ -16,16 +15,8 @@ const MyClaims = () => {
 
   const fetchMyClaims = async () => {
     try {
-      const token = await getToken();
-      const response = await fetch('https://campusfound-updated-version.onrender.com/api/claims/my', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      if (response.ok) {
-        setClaims(data.claims || []);
-      }
+      const response = await api.get('/claims/my');
+      setClaims(response.data.claims || []);
     } catch (error) {
       console.error('Failed to fetch claims:', error);
     } finally {
@@ -226,7 +217,7 @@ const MyClaims = () => {
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default MyClaims
+export default MyClaims;

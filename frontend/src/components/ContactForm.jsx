@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import api from '../utils/api';
 
 const ContactForm = () => {
   const [formData, setFormData] = useState({
@@ -59,31 +60,26 @@ const ContactForm = () => {
     }
 
     try {
-      const response = await fetch('https://campusfound-updated-version.onrender.com/api/contact', {
-        method: 'POST',
-        body: data,
+      const response = await api.post('/contact', data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
-      const result = await response.json();
-
-      if (response.ok) {
-        setMessage(result.message || 'Contact form submitted successfully!');
-        setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          message: '',
-          image: null,
-        });
-        // Reset file input
-        const fileInput = document.querySelector('input[type="file"]');
-        if (fileInput) fileInput.value = '';
-      } else {
-        setMessage(result.message || 'Error submitting form. Please try again.');
-      }
+      setMessage(response.data.message || 'Contact form submitted successfully!');
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        message: '',
+        image: null,
+      });
+      // Reset file input
+      const fileInput = document.querySelector('input[type="file"]');
+      if (fileInput) fileInput.value = '';
     } catch (error) {
       console.error('Submit error:', error);
-      setMessage('Error submitting form. Please try again.');
+      setMessage(error.response?.data?.message || 'Error submitting form. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
