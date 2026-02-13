@@ -17,6 +17,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminLogin from './pages/AdminLogin';
 import ItemForm from './pages/ItemForm';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 import { Toaster } from 'react-hot-toast';
 
 import { AuthProvider } from './context/AuthContext';
@@ -58,14 +59,14 @@ function App() {
                 
                 {/* Protected Routes */}
                 <Route path="/dashboard" element={
-                  <>
+                  <ErrorBoundary>
                     <SignedIn>
                       <Dashboard />
                     </SignedIn>
                     <SignedOut>
                       <RedirectToSignIn />
                     </SignedOut>
-                  </>
+                  </ErrorBoundary>
                 } />
                 
                 <Route path="/report" element={

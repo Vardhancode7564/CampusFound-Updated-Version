@@ -23,7 +23,7 @@ const ItemDetails = () => {
   const fetchItem = async () => {
     try {
       const { data } = await api.get(`/items/${id}`)
-      setItem(data.item)
+      setItem(data.item || data.data)
     } catch (error) {
       toast.error('Failed to load item details')
       navigate('/dashboard')
@@ -165,7 +165,17 @@ const ItemDetails = () => {
                      </div>
                      <div>
                         <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Date</p>
-                        <p className="text-slate-900 font-semibold">{format(new Date(item.date), 'MMMM d, yyyy')}</p>
+                        <p className="text-slate-900 font-semibold">
+                          {item.date ? (
+                            (() => {
+                              try {
+                                return format(new Date(item.date), 'MMMM d, yyyy')
+                              } catch (e) {
+                                return 'Invalid Date'
+                              }
+                            })()
+                          ) : 'N/A'}
+                        </p>
                      </div>
                   </div>
 

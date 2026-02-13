@@ -23,7 +23,9 @@ const Dashboard = () => {
   const fetchItems = async () => {
     try {
       const { data } = await api.get('/items')
-      setItems(data.items)
+      // Safely handle different response structures
+      const itemsList = data.items || data.data || []
+      setItems(Array.isArray(itemsList) ? itemsList : [])
     } catch (error) {
       console.error('Error fetching items:', error)
     } finally {

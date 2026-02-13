@@ -31,7 +31,7 @@ const ItemCard = ({ item }) => {
             />
             <div className="absolute top-3 right-3 z-10">
               <span className={`badge uppercase tracking-wider text-[10px] px-2.5 py-1 ${statusColors[item.status] || 'bg-slate-100 text-slate-700'}`}>
-                {item.type}
+                {item.type || 'unknown'}
               </span>
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
@@ -41,11 +41,19 @@ const ItemCard = ({ item }) => {
           <div className="p-5 flex flex-col flex-grow">
             <div className="flex items-start justify-between mb-2">
               <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full border border-primary-100/50">
-                {item.category}
+                {item.category || 'Uncategorized'}
               </span>
               <span className="text-xs text-slate-400 flex items-center">
                 <Calendar size={12} className="mr-1" />
-                {format(new Date(item.date), 'MMM d, yyyy')}
+                {item.date ? (
+                  (() => {
+                    try {
+                      return format(new Date(item.date), 'MMM d, yyyy')
+                    } catch (e) {
+                      return 'Invalid Date'
+                    }
+                  })()
+                ) : 'N/A'}
               </span>
             </div>
 

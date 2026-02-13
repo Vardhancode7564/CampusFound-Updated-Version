@@ -20,7 +20,8 @@ const MyPosts = () => {
     try {
       const response = await api.get('/user/items');
       if (response.data.success) {
-        setItems(response.data.items || []);
+        const itemsList = response.data.items || response.data.data || [];
+        setItems(Array.isArray(itemsList) ? itemsList : []);
       }
     } catch (error) {
       console.error('Failed to fetch posts:', error);
@@ -157,7 +158,17 @@ const MyPosts = () => {
                 <p className="text-sm text-gray-600 mb-2">{item.category}</p>
                 <p className="text-sm text-gray-500 line-clamp-2 mb-3">{item.description}</p>
                 <p className="text-xs text-gray-500 mb-3">
-                  📍 {item.location} • {new Date(item.date).toLocaleDateString()}
+                  📍 {item.location} • {
+                    item.date ? (
+                      (() => {
+                        try {
+                          return new Date(item.date).toLocaleDateString()
+                        } catch (e) {
+                          return 'Invalid Date'
+                        }
+                      })()
+                    ) : 'N/A'
+                  }
                 </p>
                 <div className="flex space-x-2">
                   <Link
