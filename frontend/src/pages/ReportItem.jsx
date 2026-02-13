@@ -2,6 +2,7 @@ import { useUser } from '@clerk/clerk-react';
 import { Upload, X } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../utils/api';
 
 const CATEGORIES = [
   'Electronics',
@@ -68,9 +69,6 @@ const ReportItem = () => {
     setError('');
 
     try {
-      // Get token from Clerk
-      const token = await window.Clerk?.session?.getToken();
-      
       const data = new FormData();
       
       data.append('type', formData.type);
@@ -81,31 +79,22 @@ const ReportItem = () => {
       data.append('date', formData.date);
       data.append('contactEmail', user.primaryEmailAddress.emailAddress);
       data.append('contactPhone', user.primaryPhoneNumber?.phoneNumber || '');
-      // ... remainder ...
       
       if (imageFile) {
         data.append('image', imageFile);
       }
 
-      const response = await fetch('https://campusfound-updated-version.onrender.com/api/items', {
-        method: 'POST',
+      await api.post('/items', data, {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
         },
-        body: data,
       });
 
-      const result = await response.json();
-      
-      if (response.ok) {
-        alert('Item reported successfully!');
-        navigate('/my-posts');
-      } else {
-        setError(result.message || 'Failed to submit item');
-      }
+      alert('Item reported successfully!');
+      navigate('/my-posts');
     } catch (error) {
       console.error(error);
-      setError('Failed to submit item. Please try again.');
+      setError(error.response?.data?.message || 'Failed to submit item. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -336,7 +325,7 @@ const ReportItem = () => {
         </form>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ReportItem
+export default ReportItem;
