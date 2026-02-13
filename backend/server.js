@@ -53,7 +53,7 @@ app.use('/api', limiter);
 
 app.use(cors({
   origin: [
-    process.env.CLIENT_URL,
+    process.env.CLIENT_URL?.replace(/\/$/, ''),
     'http://localhost:5173',
     'https://campus-found-updated-version.vercel.app'
   ],

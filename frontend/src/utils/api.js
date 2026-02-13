@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  // Use VITE_API_URL if set, otherwise fallback to the production Render URL
+  baseURL: import.meta.env.VITE_API_URL || 'https://campusfound-updated-version.onrender.com/api',
   headers: {
     'Content-Type': 'application/json'
   }
